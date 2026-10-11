@@ -1,0 +1,53 @@
+{
+  "name": "upbilim-board",
+  "version": "0.1.0",
+  "description": "A vector whiteboard for AI tutors: an LLM draws with short JSON commands while it talks — marker-style strokes, textbook formulas, function graphs, geometry, auto-layout diagrams and a scene memory for the model.",
+  "type": "module",
+  "main": "dist/upbilim-board.js",
+  "module": "dist/upbilim-board.js",
+  "types": "dist/types/board.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/board.d.ts",
+      "import": "./dist/upbilim-board.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "docs",
+    "examples",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "author": "UpBilim",
+  "homepage": "https://github.com/UpBilim/board",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UpBilim/board.git"
+  },
+  "keywords": [
+    "whiteboard",
+    "ai-tutor",
+    "llm",
+    "education",
+    "canvas",
+    "math",
+    "latex",
+    "graphs",
+    "diagrams",
+    "edtech"
+  ],
+  "scripts": {
+    "build": "esbuild src/board.ts --bundle --format=esm --target=es2022 --outfile=dist/upbilim-board.js --banner:js='/*! UpBilim Board v0.1.0 | Copyright 2026 UpBilim (https://upbilim.com) | Apache-2.0 | https://github.com/UpBilim/board */' && esbuild src/board.ts --bundle --format=esm --target=es2022 --minify --outfile=dist/upbilim-board.min.js --banner:js='/*! UpBilim Board v0.1.0 | Copyright 2026 UpBilim (https://upbilim.com) | Apache-2.0 | https://github.com/UpBilim/board */' && tsc",
+    "typecheck": "tsc --noEmit",
+    "serve": "python3 -m http.server 8080"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UpBilim Board — examples</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0f1330; color: #fff1e8; font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 1000px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  p { margin: 0 0 14px; color: #c2c3c7; }
+  nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  button { border: 0; border-radius: 999px; padding: 8px 14px; background: #2a3166; color: #fff1e8; font: inherit; cursor: pointer; }
+  button[aria-pressed="true"] { background: #29adff; color: #0f1330; font-weight: 600; }
+  #title { min-height: 28px; font-size: 20px; font-weight: 700; text-align: center; }
+  canvas { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; }
+  pre { margin: 14px 0 0; padding: 12px; background: #161b3d; border-radius: 10px; overflow-x: auto; font-size: 12.5px; white-space: pre-wrap; }
+  a { color: #29adff; }
+</style>
+</head>
+<body>
+<main>
+  <h1>UpBilim Board</h1>
+  <p>A vector whiteboard for AI tutors. Every scene below is a list of JSON commands, the same ones a language model writes while it talks. <a href="https://github.com/UpBilim/board">GitHub</a></p>
+  <nav id="tabs"></nav>
+  <div id="title"></div>
+  <canvas id="board"></canvas>
+  <pre id="scene"></pre>
+</main>
+<script type="module">
+import { Board } from '../dist/upbilim-board.js';
+
+const SCENES = {
+  'Equation + graph': [
+    { op: 'title', s: 'Linear equation' },
+    { op: 'step', id: 'sol', x: 20, y: 30, s: '3x - 5 = 10' },
+    { op: 'step', id: 'sol', s: '3x = 15', note: '+5' },
+    { op: 'step', id: 'sol', s: 'x = 5', note: ':3' },
+    { op: 'mark', id: 'sol.3', style: 'box', c: '#00E436' },
+    { op: 'axes', id: 'ax', x: 165, y: 15, w: 140, h: 140, xmin: -2, xmax: 6, ymin: -8, ymax: 12 },
+    { op: 'plot', axes: 'ax', id: 'f', fn: '3x - 5', c: '#29ADFF', s: 'y = 3x - 5' },
+    { op: 'dot', axes: 'ax', x: 5, y: 10, s: '(5; 10)', proj: true },
+    { op: 'point', id: 'f' },
+  ],
+  'Formulas': [
+    { op: 'title', s: 'Textbook formulas' },
+    { op: 'formula', x: 160, y: 12, align: 'center', s: 'x_{1,2} = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}', size: 2 },
+    { op: 'formula', x: 20, y: 70, s: '\\begin{cases} 2x + y = 5 \\\\ x - y = 1 \\end{cases}', size: 2 },
+    { op: 'formula', x: 170, y: 72, s: '\\frac{\\cancel{3} \\cdot 4}{\\cancel{3} \\cdot 5} = \\frac{4}{5}', size: 2 },
+    { op: 'formula', x: 20, y: 132, s: '\\sqrt[3]{27} + \\left( \\frac{1}{2} \\right)^{2} = \\boxed{3\\frac{1}{4}}', size: 2 },
+    { op: 'formula', x: 205, y: 140, s: '\\vec{F} = m\\vec{a}', size: 2 },
+    { op: 'mark', id: 'o3', style: 'underline', c: '#FFEC27' },
+  ],
+  'Geometry': [
+    { op: 'title', s: 'Isosceles triangle' },
+    { op: 'poly', id: 'abc', pts: [[50, 150], [150, 30], [250, 150]], fill: false, c: '#FFF1E8', names: ['A', 'B', 'C'] },
+    { op: 'line', id: 'ab', x1: 50, y1: 150, x2: 150, y2: 30, c: '#FFF1E8', ticks: 1 },
+    { op: 'line', id: 'bc', x1: 150, y1: 30, x2: 250, y2: 150, c: '#FFF1E8', ticks: 1 },
+    { op: 'line', id: 'h', x1: 150, y1: 30, x2: 150, y2: 150, c: '#29ADFF', lw: 1, dash: true, s: 'h' },
+    { op: 'angle', x: 150, y: 150, a: [250, 150], b: [150, 30], right: true, c: '#29ADFF' },
+    { op: 'angle', x: 50, y: 150, a: [250, 150], b: [150, 30], s: '\\alpha', c: '#FFEC27' },
+    { op: 'angle', x: 250, y: 150, a: [150, 30], b: [50, 150], s: '\\alpha', c: '#FFEC27' },
+    { op: 'formula', x: 262, y: 40, s: 'AB = BC', size: 1 },
+  ],
+  'Number line': [
+    { op: 'title', s: 'x ≥ −1' },
+    { op: 'formula', x: 160, y: 30, align: 'center', s: '2x + 3 \\ge 1 \\Rightarrow x \\ge -1', size: 2 },
+    { op: 'numberline', id: 'nl', x1: 20, x2: 300, y: 110, from: -5, to: 5 },
+    { op: 'interval', on: 'nl', from: -1, to: null, closed: [true, false], c: '#FF004D' },
+    { op: 'dot', on: 'nl', x: -1, s: '−1', c: '#FF004D' },
+  ],
+  'Diagrams': [
+    { op: 'schema', id: 'c', type: 'cycle', x: 4, y: 4, w: 156, h: 86, items: ['Evaporation', 'Condensation', 'Rain', 'Collection'] },
+    { op: 'schema', id: 't', type: 'tree', x: 164, y: 4, w: 152, h: 86, root: { s: 'Animals', kids: [{ s: 'Vertebrates', kids: ['Fish', 'Birds'] }, { s: 'Invertebrates' }] } },
+    { op: 'schema', id: 'v', type: 'venn', x: 4, y: 94, w: 156, h: 82, sets: ['Cats', 'Dogs'], a: ['meow'], b: ['bark'], ab: ['pets'] },
+    { op: 'schema', id: 'tb', type: 'table', x: 164, y: 96, w: 152, h: 78, head: ['Substance', 'Formula'], rows: [['Water', 'H₂O'], ['Salt', 'NaCl'], ['Sugar', 'C₁₂H₂₂O₁₁']] },
+    { op: 'point', id: 'c.2' },
+  ],
+  'Flow + timeline': [
+    { op: 'schema', id: 'f', type: 'flow', x: 8, y: 8, w: 304, h: 70, items: ['Seed', 'Sprout', 'Flower', 'Fruit'] },
+    { op: 'schema', id: 'tl', type: 'timeline', x: 8, y: 92, w: 304, h: 84, items: [{ t: '1903', s: 'First airplane' }, { t: '1957', s: 'First satellite' }, { t: '1961', s: 'First human in space' }, { t: '1969', s: 'Moon landing' }] },
+  ],
+  'Science': [
+    { op: 'title', s: 'Water cycle' },
+    { op: 'icon', name: 'sun', x: 40, y: 45, s: 44, anim: { type: 'pulse', scale: 1.08, period: 2 } },
+    { op: 'rect', x: 10, y: 150, w: 300, h: 24, c: '#29ADFF', fill: true },
+    { op: 'label', x: 20, y: 128, s: 'sea' },
+    { op: 'arrow', x1: 110, y1: 145, x2: 150, y2: 75, c: '#FFA300', dash: true },
+    { op: 'icon', id: 'steam', name: 'cloud', x: 125, y: 130, s: 14, c: '#C2C3C7', anim: { type: 'rise', dy: -50, period: 2 } },
+    { op: 'icon', id: 'cloud', name: 'cloud', x: 185, y: 50, s: 56 },
+    { op: 'label', x: 232, y: 30, s: 'cloud', to: { x: 205, y: 42 } },
+    { op: 'icon', id: 'd1', name: 'drop', x: 175, y: 92, s: 16, anim: { type: 'fall', dy: 45, period: 1.1 } },
+    { op: 'icon', id: 'd2', name: 'drop', x: 200, y: 96, s: 16, anim: { type: 'fall', dy: 45, period: 1.4 } },
+    { op: 'atom', id: 'atom', x: 268, y: 100, shells: [2], protons: 2 },
+    { op: 'point', id: 'cloud' },
+  ],
+};
+
+const canvas = document.getElementById('board');
+const titleEl = document.getElementById('title');
+const sceneEl = document.getElementById('scene');
+const tabs = document.getElementById('tabs');
+const board = new Board(canvas, (t) => { titleEl.textContent = t; });
+let timers = [];
+
+function play(name) {
+  timers.forEach(clearTimeout); timers = [];
+  for (const b of tabs.children) b.setAttribute('aria-pressed', String(b.textContent === name));
+  board.clear();
+  sceneEl.textContent = '';
+  const cmds = SCENES[name];
+  cmds.forEach((c, i) => timers.push(setTimeout(() => board.draw(c), i * 550)));
+  // what the model would receive with the next question
+  timers.push(setTimeout(() => { sceneEl.textContent = 'board.scene() →\n' + board.scene(); }, cmds.length * 550 + 1500));
+}
+
+for (const name of Object.keys(SCENES)) {
+  const b = document.createElement('button');
+  b.textContent = name;
+  b.onclick = () => play(name);
+  tabs.appendChild(b);
+}
+play(Object.keys(SCENES)[0]);
+</script>
+</body>
+</html>
